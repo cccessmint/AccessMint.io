@@ -1,37 +1,34 @@
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
-interface Params {
-  params: { mintId: string };
-}
-
-export async function GET(request: Request, { params }: Params) {
+export async function GET(req: Request, { params }: { params: { mintId: string } }) {
   const { mintId } = params;
 
+  // Dohvatimo mint podatke s joinom na kampanju
   const { data: mint, error } = await supabaseAdmin
     .from('mints')
-    .select('id, minted_at, wallet_address, campaigns(name, description)')
+    .select('id, campaigns ( name, description )')
     .eq('id', mintId)
     .single();
 
   if (error || !mint) {
-    return new Response(JSON.stringify({ error: 'Metadata not found' }), { status: 404 });
+    return new Response('Mint not found', { status: 404 });
   }
 
   // Generiramo JSON metadata za NFT
   const metadata = {
-    name: `AccessMint NFT - ${mint.campaigns?.name}`,
-    description: mint.campaigns?.description,
+    name: `AccessMint NFT - ${mint.campaigns?.[0]?.name}`,
+    description: mint.campaigns?.[0]?.description,
     image: 'https://your-default-image-or-ipfs.jpg',
     attributes: [
-      { trait_type: 'Campaign', value: mint.campaigns?.name },
-      { trait_type: 'Minted At', value: mint.minted_at },
-      { trait_type: 'Owner', value: mint.wallet_address }
-    ]
+      {
+        trait_type: 'Mint ID',
+        value: mint.id,
+      },
+    ],
   };
 
   return new Response(JSON.stringify(metadata), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' }
+    headers: { 'Content-Type': 'application/json' },
   });
 }
 
