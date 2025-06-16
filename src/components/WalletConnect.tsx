@@ -1,55 +1,31 @@
 'use client';
 
-import { useAccount, useConnect, useDisconnect } from 'wagmi';
-import { InjectedConnector } from 'wagmi/connectors/injected';
-import { useState, useEffect } from 'react';
+import { useConnect, useAccount, useDisconnect } from 'wagmi';
+import { InjectedConnector } from '@wagmi/connectors/injected';
 
 export default function WalletConnect() {
   const { connect } = useConnect({
     connector: new InjectedConnector(),
   });
-  const { disconnect } = useDisconnect();
+
   const { address, isConnected } = useAccount();
-  const [synced, setSynced] = useState(false);
+  const { disconnect } = useDisconnect();
 
-  useEffect(() => {
-    if (isConnected && address && !synced) {
-      saveWalletAddress(address);
-    }
-  }, [isConnected, address, synced]);
-
-  const saveWalletAddress = async (walletAddress: string) => {
-    await fetch('/api/wallet', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ wallet_address: walletAddress }),
-    });
-    setSynced(true);
-  };
+  if (isConnected) {
+    return (
+      <div>
+        Connected to {address}
+        <button onClick={() => disconnect()} className="ml-4 px-4 py-2 bg-red-500 text-white rounded">
+          Disconnect
+        </button>
+      </div>
+    );
+  }
 
   return (
-    <div className="border p-4 rounded mb-6">
-      <h2 className="text-xl mb-4">Wallet Connection</h2>
-
-      {isConnected ? (
-        <div>
-          <p className="mb-2">Connected: {address}</p>
-          <button
-            onClick={() => disconnect()}
-            className="bg-red-600 text-white p-2 rounded"
-          >
-            Disconnect
-          </button>
-        </div>
-      ) : (
-        <button
-          onClick={() => connect()}
-          className="bg-green-600 text-white p-2 rounded"
-        >
-          Connect Wallet
-        </button>
-      )}
-    </div>
+    <button onClick={() => connect()} className="px-4 py-2 bg-blue-500 text-white rounded">
+      Connect Wallet
+    </button>
   );
 }
 
