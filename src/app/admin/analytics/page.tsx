@@ -8,6 +8,16 @@ interface MintStat {
   total_revenue: number;
 }
 
+interface Campaign {
+  id: string;
+  name: string;
+  mint_price: number;
+}
+
+interface Mint {
+  campaign_id: string;
+}
+
 export default async function AnalyticsPage() {
   const supabase = createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -32,9 +42,8 @@ export default async function AnalyticsPage() {
     return <div>Error loading mints: {mintsError.message}</div>;
   }
 
-  // Agregacija mintova po kampanji
-  const stats: MintStat[] = campaigns.map(c => {
-    const mintCount = mints.filter(m => m.campaign_id === c.id).length;
+  const stats: MintStat[] = (campaigns as Campaign[]).map((c) => {
+    const mintCount = (mints as Mint[]).filter(m => m.campaign_id === c.id).length;
     const revenue = mintCount * (c.mint_price || 0);
     return {
       id: c.id,
