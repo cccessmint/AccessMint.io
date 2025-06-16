@@ -5,7 +5,9 @@ import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 export async function POST(req: Request) {
   const cookieStore = cookies();
 
-  const supabase = createServerComponentClient({ cookies: cookieStore });
+  const supabase = createServerComponentClient({
+    cookies: () => cookieStore,  // OVO JE KLJUČNA IZMJENA
+  });
 
   const {
     name,
