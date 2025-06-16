@@ -1,18 +1,10 @@
-import { getDefaultConfig } from '@rainbow-me/rainbowkit';
+import { createConfig, http } from 'wagmi';
 import { polygon } from 'wagmi/chains';
-import { createConfig } from 'wagmi';
-import { publicProvider } from 'wagmi/providers/public';
-import { jsonRpcProvider } from 'wagmi/providers/jsonRpc';
 
-export const wagmiConfig = createConfig(
-  getDefaultConfig({
-    appName: 'AccessMint Portal',
-    chains: [polygon],
-    transports: {
-      [polygon.id]: jsonRpcProvider({
-        rpc: () => ({ http: 'https://polygon-rpc.com' }),
-      }),
-    },
-  })
-);
+export const wagmiConfig = createConfig({
+  chains: [polygon],
+  transports: {
+    [polygon.id]: http(),
+  },
+});
 
