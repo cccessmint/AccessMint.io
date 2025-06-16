@@ -1,11 +1,11 @@
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { cookies } from 'next/headers';
-import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 
 export async function POST(req: Request) {
   const cookieStore = cookies();
 
-  const supabase = createPagesServerClient({ cookies: () => cookieStore });
+  const supabase = createServerComponentClient({ cookies: cookieStore });
 
   const {
     name,
