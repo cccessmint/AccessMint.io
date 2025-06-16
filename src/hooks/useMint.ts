@@ -1,26 +1,33 @@
-'use client';
+import { useState } from 'react';
+import { useAccount, useContractWrite, useWaitForTransactionReceipt } from 'wagmi';
+import { parseEther } from 'viem';
+import { ACCESS_PASS_ABI, ACCESS_PASS_ADDRESS } from '@/lib/contractConfig';
 
-import { useWriteContract, useSimulateContract } from 'wagmi';
-import { ACCESS_PASS_ADDRESS, ACCESS_PASS_ABI } from '@/lib/contractConfig';
+export function useMint(mintPrice: number) {
+  const { address, isConnected } = useAccount();
+  const [hash, setHash] = useState<`0x${string}` | undefined>(undefined);
 
-export function useMint(price: bigint) {
-  const { data: simData, error: simError } = useSimulateContract({
-    address: ACCESS_PASS_ADDRESS,
-    abi: ACCESS_PASS_ABI,
-    functionName: 'mint',
-    value: price,
+  const { data, writeContract } = useContractWrite();
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
+    hash,
   });
 
-  const { writeContract, isPending, isSuccess, error } = useWriteContract();
+  const mint = async () => {
+    const tx = await writeContract({
+      address: ACCESS_PASS_ADDRESS,
+      abi: ACCESS_PASS_ABI,
+      functionName: 'mint',
+      value: parseEther(mintPrice.toString()),
+    });
+    setHash(tx.hash);
+  };
 
-  function mint() {
-    if (simError) {
-      console.error(simError);
-      return;
-    }
-    writeContract(simData?.request);
-  }
-
-  return { mint, isPending, isSuccess, error };
+  return {
+    address,
+    isConnected,
+    mint,
+    isConfirming,
+    isConfirmed,
+  };
 }
 

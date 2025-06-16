@@ -1,6 +1,12 @@
-import AccessMintDynamicMultiAbi from '@/lib/abis/AccessMintDynamicMulti.json';
+export const ACCESS_PASS_ADDRESS = '0x453e51a953Fa5178bE4f043adf80409Bd3dCDDef'; // tvoj deployed contract na Polygonu
 
-// NOVI PRODUCTION UGOVOR SA NOVOM ADRESOM:
-export const ACCESS_MINT_DYNAMIC_MULTI_ADDRESS = '0x453e51a953Fa5178bE4f043adf80409Bd3dCDDef';
-export const ACCESS_MINT_DYNAMIC_MULTI_ABI = AccessMintDynamicMultiAbi;
+export const ACCESS_PASS_ABI = [
+  {
+    inputs: [],
+    name: 'mint',
+    outputs: [],
+    stateMutability: 'payable',
+    type: 'function',
+  },
+];
 

@@ -1,46 +1,52 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { readContract } from 'viem';
-import { wagmiConfig } from '@/lib/wagmiClient';
-import { ACCESS_PASS_ADDRESS, ACCESS_PASS_ABI } from '@/lib/contractConfig';
-import { useMint } from '@/hooks/useMint';
+import { useState } from 'react';
+import { useAccount, useContractWrite, useWaitForTransactionReceipt } from 'wagmi';
+import { parseEther } from 'viem';
+import { ACCESS_PASS_ABI, ACCESS_PASS_ADDRESS } from '@/lib/contractConfig';
 
-export default function MintButton() {
-  const [price, setPrice] = useState<bigint | null>(null);
+interface Props {
+  mintPrice: number;
+}
 
-  useEffect(() => {
-    async function fetchMintPrice() {
-      const result = await readContract(wagmiConfig, {
-        address: ACCESS_PASS_ADDRESS,
-        abi: ACCESS_PASS_ABI,
-        functionName: 'mintPrice'
-      });
-      setPrice(result as bigint);
-    }
-    fetchMintPrice();
-  }, []);
+export default function MintButton({ mintPrice }: Props) {
+  const { address, isConnected } = useAccount();
+  const [hash, setHash] = useState<`0x${string}` | undefined>(undefined);
 
-  const { mint, isPending, isSuccess, error } = useMint(price ?? 0n);
+  const { data, writeContract } = useContractWrite();
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
+    hash,
+  });
+
+  const handleMint = async () => {
+    const tx = await writeContract({
+      address: ACCESS_PASS_ADDRESS,
+      abi: ACCESS_PASS_ABI,
+      functionName: 'mint',
+      value: parseEther(mintPrice.toString()),
+    });
+    setHash(tx.hash);
+  };
+
+  if (!isConnected) {
+    return <p>Please connect your wallet.</p>;
+  }
 
   return (
-    <div className="p-4 border rounded">
-      <h2 className="text-xl mb-4">Mint AccessPass</h2>
-
-      {price && (
-        <p className="mb-2">Price: {Number(price) / 1e18} MATIC</p>
-      )}
-
+    <div>
       <button
-        onClick={mint}
-        disabled={isPending || price === null}
-        className="bg-blue-600 text-white p-2 rounded w-full"
+        onClick={handleMint}
+        disabled={isConfirming}
+        className="px-4 py-2 bg-blue-500 text-white rounded"
       >
-        {isPending ? 'Minting...' : 'Mint NFT'}
+        {isConfirming ? 'Minting...' : 'Mint Access Pass'}
       </button>
 
-      {isSuccess && <p className="mt-2 text-green-600">✅ Mint successful!</p>}
-      {error && <p className="mt-2 text-red-600">{error.message}</p>}
+      {isConfirmed && (
+        <div className="mt-4 p-2 bg-green-300 text-green-800 rounded">
+          Successfully minted!
+        </div>
+      )}
     </div>
   );
 }
