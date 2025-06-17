@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useAccount } from 'wagmi'
 import { saveWalletAddress } from '@/lib/saveWallet'
-import { MintButton } from '@/components/MintButton'
+import MintButton from '@/components/MintButton'
 
 export default function WalletLoginPage() {
   const { address, isConnected } = useAccount()

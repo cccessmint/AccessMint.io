@@ -1,6 +1,6 @@
 'use client'
 
-import { MintButton } from '@/components/MintButton'
+import MintButton from '@/components/MintButton'
 import { useAccount } from 'wagmi'
 import { useEffect } from 'react'
 import { saveWalletAddress } from '@/lib/saveWallet'
