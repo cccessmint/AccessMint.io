@@ -1,85 +1,60 @@
-import { createSupabaseServerClient } from '@/lib/supabaseServerClient';
-import { redirect } from 'next/navigation';
+'use client'
 
-interface MintStat {
-  id: string;
-  name: string;
-  total_mints: number;
-  total_revenue: number;
-}
+import { createClient } from '@/lib/supabaseClient'
+import { useEffect, useState } from 'react'
+import { z } from 'zod'
 
-interface Campaign {
-  id: string;
-  name: string;
-  mint_price: number;
-}
+const MintSchema = z.object({
+  id: z.string(),
+  campaign_id: z.string(),
+  wallet_address: z.string(),
+  created_at: z.string(),
+})
 
-interface Mint {
-  campaign_id: string;
-}
+type Mint = z.infer<typeof MintSchema>
 
-export default async function AnalyticsPage() {
-  const supabase = createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
+export default function AnalyticsPage() {
+  const [mints, setMints] = useState<Mint[]>([])
+  const [loading, setLoading] = useState(true)
 
-  if (!user) {
-    redirect('/');
-  }
+  useEffect(() => {
+    const fetchMints = async () => {
+      const supabase = createClient()
+      const { data, error } = await supabase.from('mints').select('*')
 
-  const { data: campaigns, error: campaignError } = await supabase
-    .from('campaigns')
-    .select('id, name, mint_price');
+      if (error) {
+        console.error('Greška pri dohvaćanju mintova:', error)
+        return
+      }
 
-  if (campaignError) {
-    return <div>Error loading campaigns: {campaignError.message}</div>;
-  }
+      const valid = MintSchema.array().safeParse(data)
+      if (valid.success) {
+        setMints(valid.data)
+      } else {
+        console.warn('Nevaljani mintovi:', valid.error)
+      }
 
-  const { data: mints, error: mintsError } = await supabase
-    .from('mints')
-    .select('campaign_id');
+      setLoading(false)
+    }
 
-  if (mintsError) {
-    return <div>Error loading mints: {mintsError.message}</div>;
-  }
+    fetchMints()
+  }, [])
 
-  const stats: MintStat[] = (campaigns as Campaign[]).map((c) => {
-    const mintCount = (mints as Mint[]).filter(m => m.campaign_id === c.id).length;
-    const revenue = mintCount * (c.mint_price || 0);
-    return {
-      id: c.id,
-      name: c.name,
-      total_mints: mintCount,
-      total_revenue: revenue,
-    };
-  });
+  if (loading) return <p>Učitavanje...</p>
 
   return (
-    <div className="p-4">
-      <h1 className="text-2xl mb-6">Campaign Analytics</h1>
-
-      {stats.length === 0 ? (
-        <p>No campaigns yet.</p>
-      ) : (
-        <table className="w-full border">
-          <thead className="bg-gray-200">
-            <tr>
-              <th className="p-2 border">Campaign</th>
-              <th className="p-2 border">Total Mints</th>
-              <th className="p-2 border">Revenue (MATIC)</th>
-            </tr>
-          </thead>
-          <tbody>
-            {stats.map(stat => (
-              <tr key={stat.id} className="border-b">
-                <td className="p-2 border">{stat.name}</td>
-                <td className="p-2 border">{stat.total_mints}</td>
-                <td className="p-2 border">{stat.total_revenue}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+    <div>
+      <h1 className="text-xl font-bold mb-4">Pregled mintova</h1>
+      <ul className="space-y-2">
+        {mints.map((mint) => (
+          <li key={mint.id} className="border p-2 rounded">
+            <p>Kampanja: {mint.campaign_id}</p>
+            <p>Wallet: {mint.wallet_address}</p>
+            <p>Kreirano: {new Date(mint.created_at).toLocaleString()}</p>
+          </li>
+        ))}
+      </ul>
     </div>
-  );
+  )
 }
 

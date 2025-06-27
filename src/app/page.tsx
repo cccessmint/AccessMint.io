@@ -14,11 +14,9 @@ export default function WalletLoginPage() {
       if (address && isConnected) {
         try {
           console.debug('[DEBUG] Trying to save address:', address);
-          const result = await saveWalletAddress(address);
-          if (result) {
-            console.log('[SUCCESS] Wallet address saved:', address);
-            setStatus('✅ Adresa spremljena u bazu.');
-          }
+          await saveWalletAddress(address);
+          console.log('[SUCCESS] Wallet address saved:', address);
+          setStatus('✅ Adresa spremljena u bazu.');
         } catch (err) {
           console.error('[ERROR] Failed to save address:', err);
           setStatus('❌ Greška pri spremanju adrese.');

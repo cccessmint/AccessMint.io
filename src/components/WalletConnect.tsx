@@ -1,31 +1,34 @@
 'use client';
 
-import { useConnect, useAccount, useDisconnect } from 'wagmi';
+import { useAccount, useConnect, useDisconnect } from 'wagmi';
 import { injected } from 'wagmi/connectors';
 
 export default function WalletConnect() {
-  const { connect } = useConnect({
-    connector: injected(),
-  });
-
-  const { address, isConnected } = useAccount();
+  const { connect } = useConnect();
   const { disconnect } = useDisconnect();
-
-  if (isConnected) {
-    return (
-      <div>
-        Connected to {address}
-        <button onClick={() => disconnect()} className="ml-4 px-4 py-2 bg-red-500 text-white rounded">
-          Disconnect
-        </button>
-      </div>
-    );
-  }
+  const { address, isConnected } = useAccount();
 
   return (
-    <button onClick={() => connect()} className="px-4 py-2 bg-blue-500 text-white rounded">
-      Connect Wallet
-    </button>
+    <div className="p-4 border rounded">
+      {isConnected ? (
+        <>
+          <p className="mb-2">👛 Wallet: {address}</p>
+          <button
+            onClick={() => disconnect()}
+            className="bg-red-500 text-white px-4 py-2 rounded"
+          >
+            🔌 Disconnect
+          </button>
+        </>
+      ) : (
+        <button
+          onClick={() => connect({ connector: injected() })}
+          className="bg-blue-500 text-white px-4 py-2 rounded"
+        >
+          🔐 Connect Wallet
+        </button>
+      )}
+    </div>
   );
 }
 

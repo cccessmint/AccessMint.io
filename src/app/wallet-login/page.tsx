@@ -10,7 +10,7 @@ export default function WalletLoginPage() {
 
   useEffect(() => {
     if (isConnected && address) {
-      console.log('[DEBUG] Trying to save address:', address);
+      console.debug('[DEBUG] Trying to save address:', address);
       saveWalletAddress(address)
         .then(() => console.log('[SUCCESS] Wallet address saved:', address))
         .catch(error => console.error('[ERROR] Saving address failed:', error));

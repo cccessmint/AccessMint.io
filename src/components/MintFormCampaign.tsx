@@ -1,26 +1,37 @@
 'use client';
 
 import { useMintFromCampaign } from '@/hooks/useMintFromCampaign';
+import rawABI from '@/lib/abis/AccessMintDynamicMulti.json';
+import { contractAddress } from '@/lib/contractConfig';
+import { Abi } from 'viem';
 
-interface Props {
-  mintPrice: number;
-}
+const contractABI = rawABI as Abi;
 
-export default function MintFromCampaign({ mintPrice }: Props) {
-  const { mint, isPending, isSuccess, error } = useMintFromCampaign(mintPrice);
+type Props = {
+  mintPrice: string;
+};
+
+export default function MintFormCampaign({ mintPrice }: Props) {
+  const parsedPrice = parseInt(mintPrice, 10);
+
+  const { mint, isPending, isSuccess, error } = useMintFromCampaign(
+    parsedPrice,
+    contractAddress,
+    contractABI,
+    'mintFromCampaign'
+  );
 
   return (
     <div className="p-4 border rounded mt-6">
       <button
+        className="bg-blue-500 text-white px-4 py-2 rounded"
         onClick={mint}
         disabled={isPending}
-        className="bg-blue-600 text-white p-2 rounded w-full"
       >
-        {isPending ? 'Minting...' : 'Mint NFT'}
+        {isPending ? 'Minting...' : 'Mint from Campaign'}
       </button>
-
-      {isSuccess && <p className="mt-2 text-green-600">✅ Mint successful!</p>}
-      {error && <p className="mt-2 text-red-600">{error.message}</p>}
+      {isSuccess && <p className="text-green-600 mt-2">Mint successful!</p>}
+      {error && <p className="text-red-600 mt-2">{error.message}</p>}
     </div>
   );
 }

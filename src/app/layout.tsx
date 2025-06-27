@@ -1,7 +1,7 @@
 import './globals.css'
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
-import Web3Provider from '@/components/Web3Provider'
+import { Web3Provider } from '@/providers/Web3Provider';
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import React from 'react'
 

@@ -1,33 +1,43 @@
-import { useState } from 'react';
-import { useAccount, useContractWrite, useWaitForTransactionReceipt } from 'wagmi';
-import { parseEther } from 'viem';
-import { ACCESS_PASS_ABI, ACCESS_PASS_ADDRESS } from '@/lib/contractConfig';
+import {
+  useAccount,
+  useContractWrite,
+  useWaitForTransactionReceipt,
+} from 'wagmi'
+import { parseEther } from 'viem'
+import { contractABI, contractAddress } from '@/lib/contractConfig'
 
 export function useMint(mintPrice: number) {
-  const { address, isConnected } = useAccount();
-  const [hash, setHash] = useState<`0x${string}` | undefined>(undefined);
+  const { address, isConnected } = useAccount()
 
-  const { data, writeContract } = useContractWrite();
-  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
-    hash,
-  });
+  const {
+    data: hash,
+    isPending,
+    error,
+    writeContract,
+  } = useContractWrite()
 
-  const mint = async () => {
-    const tx = await writeContract({
-      address: ACCESS_PASS_ADDRESS,
-      abi: ACCESS_PASS_ABI,
+  async function mint() {
+    if (!isConnected || !address) {
+      throw new Error('Wallet not connected')
+    }
+
+    writeContract({
+      abi: contractABI,
+      address: contractAddress,
       functionName: 'mint',
       value: parseEther(mintPrice.toString()),
-    });
-    setHash(tx.hash);
-  };
+    })
+  }
+
+  const { isSuccess } = useWaitForTransactionReceipt({
+    hash,
+  })
 
   return {
-    address,
-    isConnected,
     mint,
-    isConfirming,
-    isConfirmed,
-  };
+    isPending,
+    isSuccess,
+    error,
+  }
 }
 

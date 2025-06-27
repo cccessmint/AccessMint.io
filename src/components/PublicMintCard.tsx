@@ -3,10 +3,22 @@
 import { useEffect, useState } from 'react';
 import { useMintFromCampaign } from '@/hooks/useMintFromCampaign';
 import { getTotalSupply } from '@/lib/contractReadHelpers';
+import { contractAddress } from '@/lib/contractConfig';
+import rawABI from '@/lib/abis/AccessMintDynamicMulti.json';
+import { Abi } from 'viem';
+const contractABI = rawABI as Abi;
 
 export default function PublicMintCard({ campaign }: { campaign: any }) {
   const [totalSupply, setTotalSupply] = useState<number | null>(null);
-  const { mint, isPending, isSuccess, error } = useMintFromCampaign(campaign.mint_price, campaign.id);
+
+  const parsedPrice = Number(campaign.mint_price);
+
+const { mint, isPending, isSuccess, error } = useMintFromCampaign(
+  parsedPrice,
+  contractAddress,
+  contractABI,
+  'mintFromCampaign'
+);
 
   useEffect(() => {
     fetchTotalSupply();
@@ -36,7 +48,7 @@ export default function PublicMintCard({ campaign }: { campaign: any }) {
         disabled={isPending || soldOut}
         className={`p-2 rounded w-full ${soldOut ? 'bg-gray-400' : 'bg-blue-600 text-white'}`}
       >
-        {soldOut ? 'Sold Out' : (isPending ? 'Minting...' : 'Mint NFT')}
+        {soldOut ? 'Sold Out' : isPending ? 'Minting...' : 'Mint NFT'}
       </button>
 
       {isSuccess && <p className="mt-2 text-green-600">✅ Mint successful!</p>}
