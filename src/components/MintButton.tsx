@@ -5,7 +5,7 @@ import { parseEther } from 'viem';
 import { contractAddress, contractABI } from '@/lib/contractConfig';
 import { walletClient } from '@/lib/wagmiClient';
 import { simulateContract, writeContract } from '@wagmi/core';
-import { config } from '@/lib/wagmiConfig';
+import { config } from '@/lib/wagmiClient';
 
 export default function MintButton() {
   const [loading, setLoading] = useState(false);
