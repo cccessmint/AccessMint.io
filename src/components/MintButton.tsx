@@ -1,121 +1,97 @@
-// src/components/MintButton.tsx
-
 "use client";
 
-import { parseAbi } from "viem";
-import { useState, useEffect } from "react";
-import { useAccount } from "wagmi";
-import { writeContract } from "@wagmi/core";
-import { createClient } from "@supabase/supabase-js";
+import { useState } from "react";
+import { parseEther } from "viem";
+import {
+  useAccount,
+  useWriteContract,
+  useWaitForTransactionReceipt,
+} from "wagmi";
+import { abi, contractAddress } from "@/contractConfig";
+import { saveMint } from "@/lib/supabase/api";
+import { useToast } from "@/components/ui/use-toast";
+import { TicketType } from "@/types";
 
-const contractAddress = "0x453e51a953Fa5178bE4f043adf80409Bd3dCDDef";
+export default function MintButton({
+  selectedTicketType,
+}: {
+  selectedTicketType: TicketType | null;
+}) {
+  const { address } = useAccount();
+  const { toast } = useToast();
+  const [hash, setHash] = useState<`0x${string}` | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-const contractAbi = parseAbi([
-  "function mint() payable"
-]);
+  const { writeContractAsync } = useWriteContract();
+  const { isLoading: isConfirming } = useWaitForTransactionReceipt({
+    hash,
+    onSuccess: async (receipt) => {
+      toast({
+        title: "✅ Mint successful!",
+        description: `Tx hash: ${receipt.transactionHash}`,
+      });
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
-type TicketType = {
-  id: string;
-  name: string;
-  metadata_uri: string;
-  price: number;
-};
-
-export default function MintButton() {
-  const [loading, setLoading] = useState(false);
-  const { address, isConnected } = useAccount();
-  const [ticketTypes, setTicketTypes] = useState<TicketType[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchTypes = async () => {
-      const { data, error } = await supabase
-        .from("ticket_types")
-        .select("id, name, metadata_uri, price")
-        .eq("is_active", true);
-
-      if (error) {
-        console.error("Failed to fetch ticket types:", error);
-      } else {
-        setTicketTypes(data);
-        if (data.length > 0) {
-          setSelectedId(data[0].id);
+      if (address && selectedTicketType) {
+        try {
+          await saveMint({
+            wallet: address,
+            campaign_id: selectedTicketType.campaign_id,
+            token_id: 0, // Optional: update if real token_id is available
+            uri: selectedTicketType.metadata_uri,
+            tx: receipt.transactionHash,
+          });
+        } catch (err) {
+          console.error("⚠️ Failed to save mint in DB:", err);
+          toast({
+            title: "⚠️ Mint saved, but DB insert failed",
+            description: "Check console for error details.",
+          });
         }
       }
-    };
 
-    fetchTypes();
-  }, []);
+      setIsLoading(false);
+    },
+  });
 
   const mint = async () => {
-    if (!isConnected || !address) {
-      alert("Please connect your wallet before minting.");
+    if (!selectedTicketType) {
+      toast({ title: "⚠️ Please select a ticket type." });
       return;
     }
 
-    const selected = ticketTypes.find((t) => t.id === selectedId);
-    if (!selected) {
-      alert("Please select a ticket type.");
+    if (!address) {
+      toast({ title: "❌ Wallet not connected." });
       return;
     }
 
-    if (typeof selected.price !== "number") {
-      alert("Ticket type data is incomplete.");
-      return;
-    }
-
-    const valueInWei = BigInt(Math.round(selected.price * 1e18));
-
-    console.log("Selected:", selected);
-    console.log("value (wei):", valueInWei.toString());
-
-    setLoading(true);
     try {
-      const tx = await writeContract({
+      const valueInWei = parseEther(selectedTicketType.price.toString());
+      const txHash = await writeContractAsync({
         address: contractAddress,
-        abi: contractAbi,
+        abi,
         functionName: "mint",
         value: valueInWei,
       });
 
-      console.log("✅ Transaction sent:", tx.hash);
-      alert("Minting transaction sent!");
-    } catch (error) {
-      console.error("❌ Minting failed:", error);
-      alert("Minting failed.");
-    } finally {
-      setLoading(false);
+      setHash(txHash);
+      setIsLoading(true);
+    } catch (err: any) {
+      console.error("❌ Mint error:", err);
+      toast({
+        title: "❌ Mint failed",
+        description: err.message || "Unknown error",
+      });
     }
   };
 
   return (
-    <div className="space-y-4">
-      <select
-        onChange={(e) => {
-          const id = e.target.value;
-          if (id) setSelectedId(id);
-        }}
-        className="border border-gray-300 rounded p-2 w-full"
-        value={selectedId ?? ""}
-      >
-        {ticketTypes.map((type) => (
-          <option key={type.id} value={type.id}>
-            {type.name} – {type.price} MATIC
-          </option>
-        ))}
-      </select>
-
+    <div className="flex flex-col gap-4 mt-4">
       <button
         onClick={mint}
-        disabled={loading || selectedId === null}
-        className="bg-indigo-600 text-white px-4 py-2 rounded disabled:opacity-50 w-full"
+        disabled={isLoading || isConfirming}
+        className="bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 disabled:opacity-50"
       >
-        {loading ? "Minting..." : "Mint NFT"}
+        {isLoading || isConfirming ? "Minting..." : "Mint NFT"}
       </button>
     </div>
   );
